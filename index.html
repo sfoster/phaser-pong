@@ -21,6 +21,7 @@
 	var textLevel;
 	var notif;
 	var emitter;
+	var activeInputs = {};
 
 	var playerWin = 0;
 	var computerWin = 0;
@@ -56,10 +57,12 @@
 
 	function create() {
 		//Hide the cursor
+		configureInputs();
+
 		game.canvas.style.cursor = 'none';
 		game.add.tileSprite(0, 0, stageWidth, stageHeight, 'background');
-		player1 = createPlayer(game.world.centerX, stageHeight-40);
-		computerPlayer = createPlayer(game.world.centerX, 20);
+		player1 = createPlayer(game.world.centerX, stageHeight-40, { inputType: "mouse" });
+		computerPlayer = createPlayer(game.world.centerX, 20, { inputType: "auto" });
 		textLevel = game.add.text(0, 0, 'Level: ' + level, {fill: '#efefef'})
 		notif = game.add.text(game.world.centerX, game.world.centerY, '', {fill: '#efefef'})
 		notif.anchor.setTo(0.5, 0.5);
@@ -73,12 +76,22 @@
 		emitter = game.add.emitter(0, 0, 200);
 		emitter.makeParticles('star');
 
-		configureInputs();
+		game.input.onDown.add(releaseBall, this);
 	}
 
 	function configureInputs() {
+		activeInputs.mouse = {
+			get x() {
+				console.log("returning mouse input.x: " + game.input.x);
+				return game.input.x;
+			}
+		};
+		activeInputs.auto = {
+			get x() {
+				return ball.x;
+			}
+		};
 		// game.input.keyboard.addKey(Phaser.Keyboard.P);
-		game.input.onDown.add(releaseBall, this);
 	}
 
 	function particleBurst(x, y) {
@@ -95,11 +108,13 @@
 
 	}
 
-	function createPlayer(x, y) {
-		var player = {
-			input: {},
-			padding: null,
-		};
+	function createPlayer(x, y, props) {
+		var player = Object.assign({
+			get input() {
+				return activeInputs[this.inputType];
+			},
+			paddle: null,
+		}, props);
 		var paddle = player.paddle = game.add.sprite(x, y, 'paddle');
 		paddle.anchor.setTo(0.5, 0.5);
 		paddle.body.collideWorldBounds = true;
@@ -109,13 +124,22 @@
 		return player;
 	}
 
+	function updateInputs() {
+		for(let [type, input] of Object.entries(activeInputs)) {
+			if (typeof input.update == "function") {
+				input.update();
+			}
+		}
+	}
+
 	function update() {
+		updateInputs();
+
 		//Manage player racket
 		var paddle1 = player1.paddle;
 		var paddle2 = computerPlayer.paddle;
 
-		paddle1.x = game.input.x;
-
+		paddle1.x = player1.input.x;
 		var paddle1HalfWidth = paddle1.width / 2;
 
 		if (paddle1.x < paddle1HalfWidth) {
@@ -125,13 +149,13 @@
 			paddle1.x = game.width - paddle1HalfWidth;
 		}
 		// We control the racket of a computer opponent
-		if (paddle2.x - ball.x >= -15 && paddle2.x - ball.x <= 15) {
+		if (paddle2.x - computerPlayer.input.x >= -15 && paddle2.x - computerPlayer.input.x <= 15) {
 			paddle2.body.velocity.x = 0;
 		}
-		else if (paddle2.x - ball.x < -15) {
+		else if (paddle2.x - computerPlayer.input.x < -15) {
 			paddle2.body.velocity.x = computerPlayerSpeed;
 		}
-		else if (paddle2.x - ball.x > 15) {
+		else if (paddle2.x - computerPlayer.input.x > 15) {
 			paddle2.body.velocity.x = -computerPlayerSpeed;
 		}
 		else {
@@ -184,7 +208,7 @@
 			nextLevel();
 			setBall();
 		} else if (ball.y > (stageHeight - 15)) {
-			loose();
+			gameOver();
 			setBall();
 		}
 	}
@@ -224,11 +248,11 @@
 		computerPlayerSpeed += level * 2;
 	}
 
-	function loose() {
+	function gameOver() {
 		level = 1;
 		hits = 0;
 		textLevel.setText('Level: ' + level)
-		showText('You loose ', 2000);
+		showText('You lose ', 2000);
 		computerPlayerSpeed = 250;
 	}
 
