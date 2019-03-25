@@ -9,7 +9,7 @@ let emitter;
 let activeInputs = {};
 
 let computerPlayerSpeed = 230;
-let ballSpeed = 300;
+let ballSpeed = 250;
 let ballReleased = false;
 
 let level = 1;
@@ -42,8 +42,8 @@ function create() {
 
   game.canvas.style.cursor = 'none';
   game.add.tileSprite(0, 0, stageWidth, stageHeight, 'background');
-  player1 = createPlayer(game.world.centerX, stageHeight-40, { inputType: "mouse" });
-  computerPlayer = createPlayer(game.world.centerX, 20, { inputType: "auto" });
+  computerPlayer = createPlayer(game.world.centerX, 20, { inputType: "arrowKeys" });
+  player1 = createPlayer(game.world.centerX, stageHeight-40, { inputType: "wasdKeys" });
   levelLabel = game.add.text(0, 0, 'Level: ' + level, assetPack.levelLabel.style);
   statusLabel = game.add.text(game.world.centerX, game.world.centerY, '', assetPack.statusLabel.style);
   statusLabel.anchor.setTo(0.5, 0.5);
@@ -58,12 +58,43 @@ function create() {
   emitter.makeParticles('star');
 
   game.input.onDown.add(releaseBall, this);
+  let spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+  spacebar.onDown.add(releaseBall, this);
 }
 
 function configureInputs() {
+  activeInputs.arrowKeys = {
+    x: game.world.centerX,
+    y: game.world.centerY,
+    _left: game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
+    _right: game.input.keyboard.addKey(Phaser.Keyboard.RIGHT),
+    update() {
+      if (this._left.isDown) {
+        this.x = Math.max(this.x - 8, 0);
+      }
+      if (this._right.isDown) {
+        this.x = Math.min(this.x + 8, game.world.width);
+      }
+    }
+  };
+
+  activeInputs.wasdKeys = {
+    x: game.world.centerX,
+    y: game.world.centerY,
+    _left: game.input.keyboard.addKey(Phaser.Keyboard.A),
+    _right: game.input.keyboard.addKey(Phaser.Keyboard.D),
+    update() {
+      if (this._left.isDown) {
+        this.x = Math.max(this.x - 8, 0);
+      }
+      if (this._right.isDown) {
+        this.x = Math.min(this.x + 8, game.world.width);
+      }
+    }
+  };
+
   activeInputs.mouse = {
     get x() {
-      console.log("returning mouse input.x: " + game.input.x);
       return game.input.x;
     }
   };
@@ -72,7 +103,6 @@ function configureInputs() {
       return ball.x;
     }
   };
-  // game.input.keyboard.addKey(Phaser.Keyboard.P);
 }
 
 function particleBurst(x, y) {
@@ -105,47 +135,28 @@ function createPlayer(x, y, props) {
   return player;
 }
 
-function updateInputs() {
+function update() {
   for(let input of Object.values(activeInputs)) {
     if (typeof input.update == "function") {
       input.update();
     }
   }
-}
 
-function update() {
-  updateInputs();
+  // Manage each racket
+  for (let player of [player1, computerPlayer]) {
+    let paddle = player.paddle;
+    paddle.x = player.input.x;
+    let paddleHalfWidth = paddle.width / 2;
 
-  //Manage player racket
-  let paddle1 = player1.paddle;
-  let paddle2 = computerPlayer.paddle;
-
-  paddle1.x = player1.input.x;
-  let paddle1HalfWidth = paddle1.width / 2;
-
-  if (paddle1.x < paddle1HalfWidth) {
-    paddle1.x = paddle1HalfWidth;
+    if (paddle.x < paddleHalfWidth) {
+      paddle.x = paddleHalfWidth;
+    }
+    else if (paddle.x > game.width - paddleHalfWidth) {
+      paddle.x = game.width - paddleHalfWidth;
+    }
+    // Check and handle ball and racket collisions
+    game.physics.collide(ball, paddle, ballHitsBet, null, this);
   }
-  else if (paddle1.x > game.width - paddle1HalfWidth) {
-    paddle1.x = game.width - paddle1HalfWidth;
-  }
-  // We control the racket of a computer opponent
-  if (paddle2.x - computerPlayer.input.x >= -15 && paddle2.x - computerPlayer.input.x <= 15) {
-    paddle2.body.velocity.x = 0;
-  }
-  else if (paddle2.x - computerPlayer.input.x < -15) {
-    paddle2.body.velocity.x = computerPlayerSpeed;
-  }
-  else if (paddle2.x - computerPlayer.input.x > 15) {
-    paddle2.body.velocity.x = -computerPlayerSpeed;
-  }
-  else {
-    paddle2.body.velocity.x = 0;
-  }
-
-  // Check and handle ball and racket collisions
-  game.physics.collide(ball, paddle1, ballHitsBet, null, this);
-  game.physics.collide(ball, paddle2, ballHitsBet, null, this);
 
   //Check if someone has scored a goal
   checkGoal();
@@ -202,7 +213,6 @@ function setBall() {
     ball.body.velocity.y = 0;
     ballReleased = false;
   }
-
 }
 
 function releaseBall() {
