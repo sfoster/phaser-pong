@@ -9,7 +9,7 @@ let emitter;
 let activeInputs = {};
 
 let computerPlayerSpeed = 230;
-let ballSpeed = 250;
+let ballSpeed = 185;
 let ballReleased = false;
 
 let level = 1;
@@ -39,6 +39,7 @@ function preload() {
 
 function create() {
   configureInputs();
+  game.physics.startSystem(Phaser.Physics.ARCADE);
 
   game.canvas.style.cursor = 'none';
   game.add.tileSprite(0, 0, stageWidth, stageHeight, 'background');
@@ -49,6 +50,8 @@ function create() {
   statusLabel.anchor.setTo(0.5, 0.5);
 
   ball = game.add.sprite(game.world.centerX, game.world.centerY, 'ball');
+  game.physics.arcade.enable(ball);
+
   ball.anchor.setTo(0.5, 0.5);
   ball.body.collideWorldBounds = true;
   ball.body.bounce.setTo(1, 1);
@@ -127,7 +130,10 @@ function createPlayer(x, y, props) {
     paddle: null,
   }, props);
   let paddle = player.paddle = game.add.sprite(x, y, 'paddle');
+  console.log("createPlayer, got paddle: ", paddle);
   paddle.anchor.setTo(0.5, 0.5);
+
+  game.physics.arcade.enable(paddle);
   paddle.body.collideWorldBounds = true;
   paddle.body.bounce.setTo(1, 1);
   paddle.body.immovable = true;
@@ -155,7 +161,7 @@ function update() {
       paddle.x = game.width - paddleHalfWidth;
     }
     // Check and handle ball and racket collisions
-    game.physics.collide(ball, paddle, ballHitsBet, null, this);
+    game.physics.arcade.collide(ball, paddle, ballHitsBet, null, this);
   }
 
   //Check if someone has scored a goal
