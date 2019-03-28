@@ -1,5 +1,5 @@
 "use strict";
-/*global Phaser, assetPack */
+/*global Phaser, Pong, assetPack */
 /*eslint quotes: [2, "double"]*/
 
 let player1;
@@ -21,98 +21,15 @@ let game;
 let stageHeight;
 let stageWidth;
 
-let Pong = window.Pong || {};
-Pong.Boot = function() {};
-Pong.Boot.prototype = {
+function GameState() {};
+GameState.prototype = {
   preload() {
-    console.log("Boot preload");
     let game = this.game;
-    for (let [name, value] of Object.entries(assetPack)) {
-      if (value.src) {
-        game.load.image(name, value.src);
-      }
-    }
-  },
-  create() {
-    console.log("Boot create");
-    let game = this.game;
-    game.canvas.style.cursor = "none";
-    //loading screen will have a white background
-    game.stage.backgroundColor = "#666";
-
-    let label = game.add.text(game.world.centerX, game.world.centerY, "Boot scene", assetPack.levelLabel.style);
-    label.anchor.setTo(0.5, 0.5);
-
     game.physics.startSystem(Phaser.Physics.ARCADE);
-
-    console.log("Boot create, enter Options state");
-    setTimeout(() => {
-      this.state.start("Options");
-    }, 1000);
-  }
-};
-
-Pong.Options = function() {};
-Pong.Options.prototype = {
-  create() {
-    let game = this.game;
-    console.log("Options state create");
-    this.configureInputs();
-
-    let label = game.add.text(game.world.centerX, game.world.centerY, "Options scene", assetPack.levelLabel.style);
-    label.anchor.setTo(0.5, 0.5);
-
-    setTimeout(() => {
-      this.state.start("Game");
-    }, 2000);
+    game.canvas.style.cursor = "none";
+    stageWidth = game.world.width;
+    stageHeight = game.world.height;
   },
-  configureInputs() {
-    let game = Pong.game;
-    activeInputs.arrowKeys = {
-      x: game.world.centerX,
-      y: game.world.centerY,
-      _left: game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
-      _right: game.input.keyboard.addKey(Phaser.Keyboard.RIGHT),
-      update() {
-        if (this._left.isDown) {
-          this.x = Math.max(this.x - 8, 0);
-        }
-        if (this._right.isDown) {
-          this.x = Math.min(this.x + 8, game.world.width);
-        }
-      }
-    };
-
-    activeInputs.wasdKeys = {
-      x: game.world.centerX,
-      y: game.world.centerY,
-      _left: game.input.keyboard.addKey(Phaser.Keyboard.A),
-      _right: game.input.keyboard.addKey(Phaser.Keyboard.D),
-      update() {
-        if (this._left.isDown) {
-          this.x = Math.max(this.x - 8, 0);
-        }
-        if (this._right.isDown) {
-          this.x = Math.min(this.x + 8, game.world.width);
-        }
-      }
-    };
-
-    activeInputs.mouse = {
-      get x() {
-        return game.input.x;
-      }
-    };
-    activeInputs.auto = {
-      get x() {
-        return ball.x;
-      }
-    };
-  }
-};
-
-Pong.Game = function() {};
-Pong.Game.prototype = {
   create() {
     let game = this.game;
     game.add.tileSprite(0, 0, stageWidth, stageHeight, "background");
@@ -263,20 +180,6 @@ Pong.Game.prototype = {
     emitter.start(true, 500, null, 5);
   },
 };
-
-function kickItOff() {
-  stageHeight = document.documentElement.clientHeight;
-  stageWidth = stageHeight * 0.75;
-  console.log(`init with stageWidth: ${stageWidth}, stageHeight: ${stageHeight}`);
-  Pong.game = new Phaser.Game(stageWidth, stageHeight,
-                             Phaser.AUTO, "");
-  Pong.game.state.add("Boot", Pong.Boot);
-  Pong.game.state.add("Options", Pong.Options);
-  Pong.game.state.add("Game", Pong.Game);
-  console.log("Enter state Boot");
-  Pong.game.state.start("Boot");
-}
-document.addEventListener("DOMContentLoaded", kickItOff, { once: true });
 
 function createPlayer(x, y, props) {
   let game = Pong.game;
