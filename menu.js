@@ -9,6 +9,7 @@ function MenuState() {
 MenuState.prototype = {
   preload() {
     uiUtils.hideAllPanels();
+    this.game.activeInputs = {};
   },
   create() {
     let game = this.game;
@@ -25,11 +26,16 @@ MenuState.prototype = {
     // player 1: pick controller [wasd, arrow, mouse, websocket-channel-a, websocket-channel-b]
     // player 2: pick controller [wasd, arrow, mouse, websocket-channel-a, websocket-channel-b]
 
-    this.configureInputs();
+    // add listeners, open websockets etc.
+    this.prepareInputs();
+
+    // this is what the UI / input detection would do:
+    this.configureInputForPlayer("player1", "arrowKeys");
+    this.configureInputForPlayer("player2", "wasdKeys");
   },
-  configureInputs() {
+  prepareInputs() {
     let game = Pong.game;
-    activeInputs.arrowKeys = {
+    game.activeInputs.arrowKeys = {
       x: game.world.centerX,
       y: game.world.centerY,
       _left: game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
@@ -44,7 +50,9 @@ MenuState.prototype = {
       }
     };
 
-    activeInputs.wasdKeys = {
+    // maybe we can do this directly into game.input?
+    // might want to go to phaser3 before putting time into extending it tho'
+    game.activeInputs.wasdKeys = {
       x: game.world.centerX,
       y: game.world.centerY,
       _left: game.input.keyboard.addKey(Phaser.Keyboard.A),
@@ -59,16 +67,24 @@ MenuState.prototype = {
       }
     };
 
-    activeInputs.mouse = {
+    game.activeInputs.mouse = {
       get x() {
         return game.input.x;
       }
     };
-    activeInputs.auto = {
+    game.activeInputs.auto = {
       get x() {
         return ball.x;
       }
     };
+  },
+  configureInputForPlayer(id, inputType) {
+    let player = Pong[id];
+    if (!player) {
+      console.warn("Missing player with id: ", id, Pong);
+      throw new Error("No such player with id: " + id);
+    }
+    player.inputType = inputType;
   },
   shutdown() {
     console.log("About shutdown, removing panel listeners");

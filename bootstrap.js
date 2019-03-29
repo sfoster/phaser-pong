@@ -18,6 +18,10 @@ window.onload = function() {
   game.state.add("About", AboutState);
   game.state.add("Menu", MenuState);
   game.state.add("Game", GameState);
+
+  Pong.player1 = {};
+  Pong.player2 = {};
+
   console.log("Enter state About");
   game.state.start("About");
 }
