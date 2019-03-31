@@ -2,11 +2,6 @@
 /*global Phaser, Pong, assetPack */
 /*eslint quotes: [2, "double"]*/
 
-let ball;
-let emitter;
-
-let game;
-
 function GameState() {
   this.autoPlayerSpeed = 230;
   this.ballSpeed = 185;
@@ -16,7 +11,10 @@ function GameState() {
 
   this.levelLabel = null;
   this.statusLabel = null;
+  this.ball = null;
+  this.emitter = null;
 };
+
 GameState.prototype = {
   preload() {
     let game = this.game;
@@ -34,20 +32,20 @@ GameState.prototype = {
     this.statusLabel = game.add.text(game.world.centerX, game.world.centerY, "", assetPack.statusLabel.style);
     this.statusLabel.anchor.setTo(0.5, 0.5);
 
-    let player1 = placePlayerInGame("player1", game.world.centerX, 20);
-    let player2 = placePlayerInGame("player2", game.world.centerX, worldHeight-40);
+    let player1 = placePlayerInGame("player1", 20, game.world.centerY);
+    let player2 = placePlayerInGame("player2", worldWidth-20, game.world.centerY);
     console.log("player1.input: ", player1.input);
 
-    ball = game.add.sprite(game.world.centerX, game.world.centerY, "ball");
-    game.physics.arcade.enable(ball);
+    let ball = this.ball = game.add.sprite(game.world.centerX, game.world.centerY, "ball");
+    game.physics.arcade.enable(this.ball);
 
     ball.anchor.setTo(0.5, 0.5);
     ball.body.collideWorldBounds = true;
     ball.body.bounce.setTo(1, 1);
 
     // Initialize particle emitter
-    emitter = game.add.emitter(0, 0, 200);
-    emitter.makeParticles("star");
+    this.emitter = game.add.emitter(0, 0, 200);
+    this.emitter.makeParticles("star");
 
     game.input.onDown.add(this.releaseBall, this);
     let spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
@@ -64,17 +62,17 @@ GameState.prototype = {
     // Manage each racket
     for (let player of [Pong.player1, Pong.player2]) {
       let paddle = player.paddle;
-      paddle.x = player.input.x;
-      let paddleHalfWidth = paddle.width / 2;
+      paddle.y = player.input.y;
+      let paddleHalfHeight = paddle.height / 2;
 
-      if (paddle.x < paddleHalfWidth) {
-        paddle.x = paddleHalfWidth;
+      if (paddle.y < paddleHalfHeight) {
+        paddle.y = paddleHalfHeight;
       }
-      else if (paddle.x > game.width - paddleHalfWidth) {
-        paddle.x = game.width - paddleHalfWidth;
+      else if (paddle.y > game.height - paddleHalfHeight) {
+        paddle.y = game.height - paddleHalfHeight;
       }
       // Check and handle ball and racket collisions
-      game.physics.arcade.collide(ball, paddle,
+      game.physics.arcade.collide(this.ball, paddle,
                                   (_ball, _paddle) => this.ballHitsBet(_ball, _paddle),
                                   null, this);
     }
@@ -84,10 +82,10 @@ GameState.prototype = {
   },
   setBall() {
     if (this.ballReleased) {
-      ball.x = this.game.world.centerX;
-      ball.y = this.game.world.centerY;
-      ball.body.velocity.x = 0;
-      ball.body.velocity.y = 0;
+      this.ball.x = this.game.world.centerX;
+      this.ball.y = this.game.world.centerY;
+      this.ball.body.velocity.x = 0;
+      this.ball.body.velocity.y = 0;
       this.ballReleased = false;
     }
   },
@@ -101,36 +99,37 @@ GameState.prototype = {
       this.nextLevel();
     }
 
+    let ball = this.ball;
     // Impact effect
-    if (ball.y < 60) {
-      emitter.gravity = 5;
-    } else if (ball.y > worldHeight - 60) {
-      emitter.gravity = -5;
+    if (ball.x < 60) {
+      this.emitter.gravity = 5;
+    } else if (ball.x > worldWidth - 60) {
+      this.emitter.gravity = -5;
     }
     this.particleBurst(paddle.x, paddle.y);
 
     let diff = 0;
 
     if (_ball.x < paddle.x) {
-      // The ball is on the left side of the racket
-      diff = paddle.x - _ball.x;
-      _ball.body.velocity.x = (-12 * diff);
+      // The ball is on the top side of the racket
+      diff = paddle.y - _ball.y;
+      _ball.body.velocity.y = (-12 * diff);
     }
-    else if (_ball.x > paddle.x) {
-      // The ball is on the right side of the racket
-      diff = _ball.x - paddle.x;
-      _ball.body.velocity.x = (12 * diff);
+    else if (_ball.y > paddle.y) {
+      // The ball is on the bottom side of the racket
+      diff = _ball.y - paddle.y;
+      _ball.body.velocity.y = (12 * diff);
     }
     else {
       //The ball hit the center of the racket, we add a little tragic randomness to its movement
-      _ball.body.velocity.x = 2 + Math.random() * 8;
+      _ball.body.velocity.y = 2 + Math.random() * 8;
     }
   },
   checkGoal() {
-    if (ball.y < 15) {
+    if (this.ball.x < 15) {
       this.nextLevel();
       this.setBall();
-    } else if (ball.y > (this.game.world.height - 15)) {
+    } else if (this.ball.x > (this.game.world.width - 15)) {
       this.gameOver();
       this.setBall();
     }
@@ -138,14 +137,14 @@ GameState.prototype = {
   releaseBall() {
     if (!this.ballReleased) {
       //Увеличиваем скорость мячика с каждым ударом
-      ball.body.velocity.x = this.ballSpeed + this.level * 20;
-      ball.body.velocity.y = -this.ballSpeed - this.level * 20;
+      this.ball.body.velocity.x = this.ballSpeed + this.level * 20;
+      this.ball.body.velocity.y = -this.ballSpeed - this.level * 20;
       this.ballReleased = true;
     }
   },
   showText(txt, timeout) {
     this.statusLabel.setText(txt);
-    setTimeout(function() {
+    setTimeout(() => {
       this.statusLabel.setText("");
     }, timeout);
   },
@@ -165,14 +164,14 @@ GameState.prototype = {
   },
   particleBurst(x, y) {
     // Set the particle emitter to a point x, y
-    emitter.x = x;
-    emitter.y = y;
+    this.emitter.x = x;
+    this.emitter.y = y;
 
     // The first parameter determines whether all particles should be released at one moment (explode mode, explosion)
     // The second parameter sets the particle lifetime in milliseconds.
     // In burst / explode mode, the third parameter is ignored.
     // The last parameter determines how many particles will be released during the "explosion"
-    emitter.start(true, 500, null, 5);
+    this.emitter.start(true, 500, null, 5);
   },
 };
 

@@ -3,8 +3,8 @@
 /*eslint quotes: [2, "double"]*/
 
 window.onload = function() {
-  let stageHeight = document.documentElement.clientHeight;
-  let stageWidth = stageHeight * 0.75;
+  let stageWidth = document.documentElement.clientWidth;
+  let stageHeight = stageWidth * 0.75;
   console.log(`init with stageWidth: ${stageWidth}, stageHeight: ${stageHeight}`);
 
   let gameConfig = {

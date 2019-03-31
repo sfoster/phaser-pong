@@ -40,12 +40,20 @@ MenuState.prototype = {
       y: game.world.centerY,
       _left: game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
       _right: game.input.keyboard.addKey(Phaser.Keyboard.RIGHT),
+      _up: game.input.keyboard.addKey(Phaser.Keyboard.UP),
+      _down: game.input.keyboard.addKey(Phaser.Keyboard.DOWN),
       update() {
         if (this._left.isDown) {
           this.x = Math.max(this.x - 8, 0);
         }
         if (this._right.isDown) {
           this.x = Math.min(this.x + 8, game.world.width);
+        }
+        if (this._up.isDown) {
+          this.y = Math.max(this.y - 8, 0);
+        }
+        if (this._down.isDown) {
+          this.y = Math.min(this.y + 8, game.world.height);
         }
       }
     };
@@ -57,6 +65,8 @@ MenuState.prototype = {
       y: game.world.centerY,
       _left: game.input.keyboard.addKey(Phaser.Keyboard.A),
       _right: game.input.keyboard.addKey(Phaser.Keyboard.D),
+      _up: game.input.keyboard.addKey(Phaser.Keyboard.W),
+      _down: game.input.keyboard.addKey(Phaser.Keyboard.S),
       update() {
         if (this._left.isDown) {
           this.x = Math.max(this.x - 8, 0);
@@ -64,17 +74,29 @@ MenuState.prototype = {
         if (this._right.isDown) {
           this.x = Math.min(this.x + 8, game.world.width);
         }
+        if (this._up.isDown) {
+          this.y = Math.max(this.y - 8, 0);
+        }
+        if (this._down.isDown) {
+          this.y = Math.min(this.y + 8, game.world.height);
+        }
       }
     };
 
     game.activeInputs.mouse = {
       get x() {
         return game.input.x;
+      },
+      get y() {
+        return game.input.y;
       }
     };
     game.activeInputs.auto = {
       get x() {
         return ball.x;
+      },
+      get y() {
+        return ball.y;
       }
     };
   },
