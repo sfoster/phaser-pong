@@ -29,6 +29,7 @@ GameState.prototype = {
     game.add.tileSprite(0, 0, worldWidth, worldHeight, "background");
 
     this.levelLabel = game.add.text(0, 0, "Level: " + this.level, assetPack.levelLabel.style);
+    this.levelLabel.setTextBounds(0, 0, game.world.width, 100);
     this.statusLabel = game.add.text(game.world.centerX, game.world.centerY, "", assetPack.statusLabel.style);
     this.statusLabel.anchor.setTo(0.5, 0.5);
 
@@ -136,9 +137,12 @@ GameState.prototype = {
   },
   releaseBall() {
     if (!this.ballReleased) {
+      let directionX = Pong.game.rnd.frac() > 0.5 ? 1 : -1;
+      let directionY = Pong.game.rnd.frac() > 0.5 ? 1 : -1;
       //Увеличиваем скорость мячика с каждым ударом
-      this.ball.body.velocity.x = this.ballSpeed + this.level * 20;
-      this.ball.body.velocity.y = -this.ballSpeed - this.level * 20;
+      this.ball.body.velocity.x = (this.ballSpeed + this.level * 20) * directionX;
+      this.ball.body.velocity.y = (-this.ballSpeed - this.level * 20) * directionY;
+      console.log("releaseBall direction: ", this.ball.body.velocity, directionX, directionY);
       this.ballReleased = true;
     }
   },
