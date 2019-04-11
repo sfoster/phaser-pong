@@ -23,7 +23,7 @@ AboutState.prototype = {
     let panelBounds = {
       top: 15,
       right: 15,
-      bottom: gameBounds.height / 2,
+      bottom: 15, // gameBounds.height / 2,
       left: 15,
     };
     uiUtils.showPanel("about", panelBounds);

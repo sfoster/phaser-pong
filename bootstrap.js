@@ -3,8 +3,12 @@
 /*eslint quotes: [2, "double"]*/
 
 window.onload = function() {
-  let stageWidth = document.documentElement.clientWidth;
-  let stageHeight = stageWidth * 0.75;
+  let containerNode = document.getElementById("pong-container");
+  let stageWidth = containerNode.clientWidth;
+  let stageHeight = stageWidth * 0.66;
+  containerNode.style.width = stageWidth + "px";
+  containerNode.style.height = stageHeight + "px";
+
   console.log(`init with stageWidth: ${stageWidth}, stageHeight: ${stageHeight}`);
 
   let gameConfig = {
@@ -25,4 +29,3 @@ window.onload = function() {
   console.log("Enter state About");
   game.state.start("About");
 }
-

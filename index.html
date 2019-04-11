@@ -9,19 +9,18 @@
     height: 100%;
   }
   body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .game-container {
     position: relative;
+    width: 150vh;
+    height: 100vh;
+    margin: 0 auto;
   }
 
   .panel {
     display: none;
     position: absolute;
-    inset: 15px 15px;
     z-index: 1;
     border: 4px dotted #fff;
     border-radius: 6px;
@@ -41,6 +40,18 @@
   .text-panel > section > p {
     margin 12px 6px;
   }
+  .panel > .* {
+    flex: 1 1 auto;
+  }
+  .panel > .body {
+    flex: 3 1 auto;
+    overflow: auto;
+  }
+  .panel > button {
+    flex: 0 0 auto;
+    min-height: 4rem;
+    display: block;
+  }
   h1 {
     margin: 0 0 0.5em;
     padding: 10px;
@@ -52,6 +63,7 @@
   }
   .row {
     flex-direction: row;
+    display: flex;
   }
   .row > section {
     flex: 1;
@@ -66,23 +78,27 @@
 <body>
   <div id="pong-container" class="game-container">
     <section class="panel" id="panel-menu">
-      <div class="row">
+      <div class="row body">
         <section class="col">
           <h1>Here be player 1</h1>
         </section>
         <section class="col">
           <h1>Here be player 2</h1>
         </section>
-        <button>Begin Game!</button>
       </div>
+      <button class="row">Begin Game!</button>
     </section>
     <section class="panel text-panel" id="panel-about">
-      <h1>Here be some about text</h1>
-      <h2>Credits</h2>
-      <ul>
+      <h1 class="row">Here be some about text</h1>
+      <h2 class="row">Credits</h2>
+      <ul class="body">
         <li>Phaser.js</li>
+        <li>Evenings</li>
       </ul>
-      <button>Proceed!</button>
+      <button class="row">Proceed!</button>
+    </section>
+    <section class="panel" id="panel-game">
+      <h1 class="row">Here be some overlay text</h1>
     </section>
   </div>
 

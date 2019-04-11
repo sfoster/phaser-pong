@@ -46,6 +46,7 @@ GameState.prototype = {
 
     // Initialize particle emitter
     this.emitter = game.add.emitter(0, 0, 200);
+    this.emitter.gravity = 0;
     this.emitter.makeParticles("star");
 
     game.input.onDown.add(this.releaseBall, this);
@@ -101,16 +102,9 @@ GameState.prototype = {
     }
 
     let ball = this.ball;
-    // Impact effect
-    if (ball.x < 60) {
-      this.emitter.gravity = 5;
-    } else if (ball.x > worldWidth - 60) {
-      this.emitter.gravity = -5;
-    }
     this.particleBurst(paddle.x, paddle.y);
 
     let diff = 0;
-
     if (_ball.x < paddle.x) {
       // The ball is on the top side of the racket
       diff = paddle.y - _ball.y;
