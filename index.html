@@ -105,17 +105,33 @@
   <script src="./phaser.js"></script>
   <script type="text/javascript">
     const assetPack = {
-      'paddle': {
-        src: 'assets/bat.png',
+      image: {
+        'paddle': {
+          src: 'assets/bat.png',
+        },
+        'ball': {
+          src: 'assets/ball.png',
+        },
+        'background': {
+          src: 'assets/starfield.jpg',
+        },
+        'star': {
+          src: 'assets/star.png',
+        },
       },
-      'ball': {
-        src: 'assets/ball.png',
-      },
-      'background': {
-        src: 'assets/starfield.jpg',
-      },
-      'star': {
-        src: 'assets/star.png',
+      sound: {
+        'hit': {
+          src: 'assets/Hit 5.wav'
+        },
+        'levelup': {
+          src: 'assets/Coin 3.wav'
+        },
+        'goal': {
+          src: 'assets/Select 2.wav'
+        },
+        'gameover': {
+          src: 'assets/Powerup 2.wav'
+        }
       },
       'levelLabel': {
         style: {

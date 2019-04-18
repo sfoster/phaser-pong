@@ -73,7 +73,6 @@ class MenuScene extends Phaser.Scene {
       _up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
       _down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
       update() {
-        console.log("activeInputs wasdKeys update")
         if (this._left.isDown) {
           this.x = Math.max(this.x - 8, 0);
         }

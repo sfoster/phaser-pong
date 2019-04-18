@@ -15,7 +15,6 @@ window.onload = function() {
     type: Phaser.AUTO,
     width: stageWidth,
     height: stageHeight,
-    backgroundColor: 0x000000,
     parent: 'pong-container',
     physics: {
       default: "arcade",

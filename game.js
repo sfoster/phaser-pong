@@ -27,10 +27,14 @@ class GameScene extends Phaser.Scene {
     }, bounds);
   }
   preload() {
-    this.load.image("star", assetPack.star);
-    this.load.image("bat", assetPack.paddle);
-    this.load.image("ball", assetPack.paddle);
-    // this.load.image("background", assetPack.background);
+    this.load.image("star", assetPack.image.star.src);
+    this.load.image("paddle", assetPack.image.paddle.src);
+    this.load.image("ball", assetPack.image.ball.src);
+    this.load.image("bg", assetPack.image.background.src);
+    this.load.audio("hit", assetPack.sound.hit.src);
+    this.load.audio("levelup", assetPack.sound.levelup.src);
+    this.load.audio("goal", assetPack.sound.goal.src);
+    this.load.audio("gameover", assetPack.sound.gameover.src);
   }
   create() {
     window.currentScene = this;
@@ -43,22 +47,18 @@ class GameScene extends Phaser.Scene {
     };
     uiUtils.hideAllPanels();
 
-    // this.physics.world.setBounds(0, 0, 800 * 4, 600 * 4);
     const dims = this.worldBounds;
-    this.add.image(0, 0, dims.width, dims.width, "background");
+    this._bgImage = this.add.image(dims.width/2, dims.height/2, "bg");
+    this._bgImage.setScale(3);
 
     this.levelLabel = this.add.text(0, 0, "Level: " + this.level, assetPack.levelLabel.style);
-    // this.levelLabel.displayWidth = dims.width;
-    // this.levelLabel.displayHeight = dims.height;
     this.statusLabel = this.add.text(dims.centerX, dims.centerY, "", assetPack.statusLabel.style);
-    // this.statusLabel.anchor.setTo(0.5, 0.5);
 
     let player1 = this.placePlayerInGame("player1", 20, dims.centerY);
     let player2 = this.placePlayerInGame("player2", dims.width-20, dims.centerY);
     console.log("player1.input: ", player1.input);
 
     let ball = this.ball = this.physics.add.sprite(dims.centerX, dims.centerY, "ball");
-    // this.physics.arcade.enable(this.ball);
 
     ball.body.collideWorldBounds = true;
     ball.body.bounce.setTo(1, 1);
@@ -146,11 +146,13 @@ class GameScene extends Phaser.Scene {
       //The ball hit the center of the racket, we add a little tragic randomness to its movement
       _ball.body.velocity.y = 2 + Math.random() * 8;
     }
+    this.sound.play("hit");
     this.particleBurst(ball, 1);
   }
   checkGoal() {
     if (this.ball.x < 15) {
       this.nextLevel();
+      this.sound.play("goal");
       this.setBall();
     } else if (this.ball.x > (this.worldBounds.width - 15)) {
       this.gameOver();
@@ -180,6 +182,7 @@ class GameScene extends Phaser.Scene {
     this.levelLabel.text = "Level: " + this.level;
     this.showText("Level: " + this.level, 2000);
     this.autoPlayerSpeed += this.level * 2;
+    this.sound.play("levelup");
   }
   gameOver() {
     this.level = 1;
@@ -187,6 +190,7 @@ class GameScene extends Phaser.Scene {
     this.levelLabel.text = "Level: " + this.level;
     this.showText("You lose ", 2000);
     this.autoPlayerSpeed = 250;
+    this.sound.play("gameover");
   }
   particleBurst(coord, directionSign) {
     if (this._particleBurstTimer) {
