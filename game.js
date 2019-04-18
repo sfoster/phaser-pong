@@ -2,60 +2,90 @@
 /*global Phaser, Pong, assetPack */
 /*eslint quotes: [2, "double"]*/
 
-function GameState() {
-  this.autoPlayerSpeed = 230;
-  this.ballSpeed = 185;
-  this.ballReleased = false;
-  this.level = 1;
-  this.hits = 0;
+class GameScene extends Phaser.Scene {
+  constructor() {
+    super("Game");
+    this.autoPlayerSpeed = 230;
+    this.ballSpeed = 185;
+    this.ballReleased = false;
+    this.level = 1;
+    this.hits = 0;
 
-  this.levelLabel = null;
-  this.statusLabel = null;
-  this.ball = null;
-  this.emitter = null;
-};
-
-GameState.prototype = {
+    this.levelLabel = null;
+    this.statusLabel = null;
+    this.ball = null;
+    this.emitter = null;
+  }
+  get activeInputs() {
+    return Pong.activeInputs;
+  }
+  get worldBounds() {
+    let bounds = this.sys.arcadePhysics.world.bounds;
+    return Object.assign({
+      centerX: bounds.x + bounds.width/2,
+      centerY: bounds.y + bounds.height/2,
+    }, bounds);
+  }
   preload() {
-    let game = this.game;
-    game.physics.startSystem(Phaser.Physics.ARCADE);
-    game.canvas.style.cursor = "none";
-  },
+    this.load.image("star", assetPack.star);
+    this.load.image("bat", assetPack.paddle);
+    this.load.image("ball", assetPack.paddle);
+    // this.load.image("background", assetPack.background);
+  }
   create() {
-    const game = this.game;
-    const worldWidth = game.world.width;
-    const worldHeight = game.world.height;
+    window.currentScene = this;
+    console.log("Game scene create");
+    let panelBounds = {
+      top: 15,
+      right: 15,
+      bottom: 15, // gameBounds.height / 2,
+      left: 15,
+    };
+    uiUtils.hideAllPanels();
 
-    game.add.tileSprite(0, 0, worldWidth, worldHeight, "background");
+    // this.physics.world.setBounds(0, 0, 800 * 4, 600 * 4);
+    const dims = this.worldBounds;
+    this.add.image(0, 0, dims.width, dims.width, "background");
 
-    this.levelLabel = game.add.text(0, 0, "Level: " + this.level, assetPack.levelLabel.style);
-    this.levelLabel.setTextBounds(0, 0, game.world.width, 100);
-    this.statusLabel = game.add.text(game.world.centerX, game.world.centerY, "", assetPack.statusLabel.style);
-    this.statusLabel.anchor.setTo(0.5, 0.5);
+    this.levelLabel = this.add.text(0, 0, "Level: " + this.level, assetPack.levelLabel.style);
+    // this.levelLabel.displayWidth = dims.width;
+    // this.levelLabel.displayHeight = dims.height;
+    this.statusLabel = this.add.text(dims.centerX, dims.centerY, "", assetPack.statusLabel.style);
+    // this.statusLabel.anchor.setTo(0.5, 0.5);
 
-    let player1 = placePlayerInGame("player1", 20, game.world.centerY);
-    let player2 = placePlayerInGame("player2", worldWidth-20, game.world.centerY);
+    let player1 = this.placePlayerInGame("player1", 20, dims.centerY);
+    let player2 = this.placePlayerInGame("player2", dims.width-20, dims.centerY);
     console.log("player1.input: ", player1.input);
 
-    let ball = this.ball = game.add.sprite(game.world.centerX, game.world.centerY, "ball");
-    game.physics.arcade.enable(this.ball);
+    let ball = this.ball = this.physics.add.sprite(dims.centerX, dims.centerY, "ball");
+    // this.physics.arcade.enable(this.ball);
 
-    ball.anchor.setTo(0.5, 0.5);
     ball.body.collideWorldBounds = true;
     ball.body.bounce.setTo(1, 1);
 
-    // Initialize particle emitter
-    this.emitter = game.add.emitter(0, 0, 200);
-    this.emitter.gravity = 0;
-    this.emitter.makeParticles("star");
+    // Initialize particle emitter manager and the emitter
+    this._starParticles = this.add.particles("star");
+    this.emitter = this._starParticles.createEmitter({
+        x: 400,
+        y: 300,
+        angle: { min: -95, max: 90 },
+        speed: 400,
+        gravityY: 0,
+        lifespan: { min: 50, max: 200 },
+        quantity: 7,
+        frequency: 100,
+        alpha: { start: 1, end: 0.1 },
+        scale: 1, // { start: 0.5, end: 1.0 },
+        // blendMode: 'ADD'
+    });
+    this.emitter.stop();
 
-    game.input.onDown.add(this.releaseBall, this);
-    let spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-    spacebar.onDown.add(this.releaseBall, this);
-  },
+    this.input.on('pointerdown', this.releaseBall, this);
+    this.input.keyboard.on('keydown-SPACE', this.releaseBall, this);
+  }
   update() {
-    let game = this.game;
-    for(let input of Object.values(game.activeInputs)) {
+    let dims = this.worldBounds;
+    for(let input of Object.values(this.activeInputs)) {
       if (typeof input.update == "function") {
         input.update();
       }
@@ -70,30 +100,29 @@ GameState.prototype = {
       if (paddle.y < paddleHalfHeight) {
         paddle.y = paddleHalfHeight;
       }
-      else if (paddle.y > game.height - paddleHalfHeight) {
-        paddle.y = game.height - paddleHalfHeight;
+      else if (paddle.y > dims.height - paddleHalfHeight) {
+        paddle.y = dims.height - paddleHalfHeight;
       }
       // Check and handle ball and racket collisions
-      game.physics.arcade.collide(this.ball, paddle,
+      this.sys.arcadePhysics.collide(this.ball, paddle,
                                   (_ball, _paddle) => this.ballHitsBet(_ball, _paddle),
                                   null, this);
     }
 
     //Check if someone has scored a goal
     this.checkGoal();
-  },
+  }
   setBall() {
+    const dims = this.worldBounds;
     if (this.ballReleased) {
-      this.ball.x = this.game.world.centerX;
-      this.ball.y = this.game.world.centerY;
+      this.ball.x = dims.centerX;
+      this.ball.y = dims.centerY;
       this.ball.body.velocity.x = 0;
       this.ball.body.velocity.y = 0;
       this.ballReleased = false;
     }
-  },
+  }
   ballHitsBet(_ball, paddle) {
-    let worldWidth = this.game.world.width;
-    let worldHeight = this.game.world.height;
     // Increase the ball hit counter
     this.hits++;
     // every third hit move to the next level
@@ -102,8 +131,6 @@ GameState.prototype = {
     }
 
     let ball = this.ball;
-    this.particleBurst(paddle.x, paddle.y);
-
     let diff = 0;
     if (_ball.x < paddle.x) {
       // The ball is on the top side of the racket
@@ -119,79 +146,82 @@ GameState.prototype = {
       //The ball hit the center of the racket, we add a little tragic randomness to its movement
       _ball.body.velocity.y = 2 + Math.random() * 8;
     }
-  },
+    this.particleBurst(ball, 1);
+  }
   checkGoal() {
     if (this.ball.x < 15) {
       this.nextLevel();
       this.setBall();
-    } else if (this.ball.x > (this.game.world.width - 15)) {
+    } else if (this.ball.x > (this.worldBounds.width - 15)) {
       this.gameOver();
       this.setBall();
     }
-  },
+  }
   releaseBall() {
     if (!this.ballReleased) {
-      let directionX = Pong.game.rnd.frac() > 0.5 ? 1 : -1;
-      let directionY = Pong.game.rnd.frac() > 0.5 ? 1 : -1;
+      let directionX = Phaser.Math.RND.frac() > 0.5 ? 1 : -1;
+      let directionY = Phaser.Math.RND.frac() > 0.5 ? 1 : -1;
       //Увеличиваем скорость мячика с каждым ударом
       this.ball.body.velocity.x = (this.ballSpeed + this.level * 20) * directionX;
       this.ball.body.velocity.y = (-this.ballSpeed - this.level * 20) * directionY;
       console.log("releaseBall direction: ", this.ball.body.velocity, directionX, directionY);
       this.ballReleased = true;
     }
-  },
+  }
   showText(txt, timeout) {
-    this.statusLabel.setText(txt);
+    this.statusLabel.text = txt;
     setTimeout(() => {
-      this.statusLabel.setText("");
+      this.statusLabel.text = "";
     }, timeout);
-  },
+  }
   nextLevel() {
     this.level += 1;
     this.hits = 0;
-    this.levelLabel.setText("Level: " + this.level);
+    this.levelLabel.text = "Level: " + this.level;
     this.showText("Level: " + this.level, 2000);
     this.autoPlayerSpeed += this.level * 2;
-  },
+  }
   gameOver() {
     this.level = 1;
     this.hits = 0;
-    this.levelLabel.setText("Level: " + this.level);
+    this.levelLabel.text = "Level: " + this.level;
     this.showText("You lose ", 2000);
     this.autoPlayerSpeed = 250;
-  },
-  particleBurst(x, y) {
-    // Set the particle emitter to a point x, y
-    this.emitter.x = x;
-    this.emitter.y = y;
+  }
+  particleBurst(coord, directionSign) {
+    if (this._particleBurstTimer) {
+      this._particleBurstTimer.destroy();
+      this._particleBurstTimer = null;
+      this.emitter.stop();
+    }
+    this.emitter.setPosition(coord.x, coord.y);
+    // this.emitter.setEmitterAngle({ min: -45 * directionSign, max: 45 * directionSign });
+    this.emitter.start();
+    this._particleBurstTimer = this.time.addEvent({
+      delay: 60,
+      callback: () => {
+        this.emitter.stop();
+      }
+    });
+  }
+  placePlayerInGame(id, x, y, props) {
+    let game = Pong.game;
+    let player = Pong[id];
+    let inputType = player.inputType;
+    console.log("placePlayerInGame, id: %s, inputType: %s, activeInputs",
+                id, player.inputType, this.activeInputs);
+    Object.assign(player, props, {
+      get input() {
+        return Pong.activeInputs[inputType];
+      },
+      paddle: null,
+    }, props);
 
-    // The first parameter determines whether all particles should be released at one moment (explode mode, explosion)
-    // The second parameter sets the particle lifetime in milliseconds.
-    // In burst / explode mode, the third parameter is ignored.
-    // The last parameter determines how many particles will be released during the "explosion"
-    this.emitter.start(true, 500, null, 5);
-  },
+    let paddle = player.paddle = this.physics.add.sprite(x, y, "paddle");
+    paddle.setCollideWorldBounds(true);
+    paddle.setBounce(1, 1);
+    paddle.body.immovable = true;
+
+    return player;
+  }
 };
-
-function placePlayerInGame(id, x, y, props) {
-  let game = Pong.game;
-  let player = Pong[id];
-  let inputType = player.inputType;
-  console.log("placePlayerInGame, id: %s, inputType: %s, activeInputs",
-              id, player.inputType, game.activeInputs);
-  Object.assign(player, props, {
-    get input() {
-      return Pong.game.activeInputs[inputType];
-    },
-    paddle: null,
-  }, props);
-  let paddle = player.paddle = game.add.sprite(x, y, "paddle");
-  paddle.anchor.setTo(0.5, 0.5);
-
-  game.physics.arcade.enable(paddle);
-  paddle.body.collideWorldBounds = true;
-  paddle.body.bounce.setTo(1, 1);
-  paddle.body.immovable = true;
-
-  return player;
-}

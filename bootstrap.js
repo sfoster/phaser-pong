@@ -12,20 +12,37 @@ window.onload = function() {
   console.log(`init with stageWidth: ${stageWidth}, stageHeight: ${stageHeight}`);
 
   let gameConfig = {
-     type: Phaser.AUTO,
-     width: stageWidth,
-     height: stageHeight,
-     backgroundColor: 0x000000,
-     parent: 'pong-container',
+    type: Phaser.AUTO,
+    width: stageWidth,
+    height: stageHeight,
+    backgroundColor: 0x000000,
+    parent: 'pong-container',
+    physics: {
+      default: "arcade",
+      arcade: {
+        fps: 60,
+        gravity: { y: 0 },
+        //       debug: true,
+      }
+    },
+    scene: [Controller, AboutScene, MenuScene, GameScene]
   };
   let game = Pong.game = new Phaser.Game(gameConfig);
-  game.state.add("About", AboutState);
-  game.state.add("Menu", MenuState);
-  game.state.add("Game", GameState);
 
   Pong.player1 = {};
   Pong.player2 = {};
+  Pong.activeInputs = {};
 
   console.log("Enter state About");
-  game.state.start("About");
+}
+
+class Controller extends Phaser.Scene {
+  constructor () {
+    super('Controller');
+  }
+  create ()
+  {
+    this.scene.launch('About');
+    // this.scene.bringToTop('About');
+  }
 }

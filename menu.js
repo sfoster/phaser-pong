@@ -2,24 +2,26 @@
 /*global Phaser, Pong, assetPack */
 /*eslint quotes: [2, "double"]*/
 
-function MenuState() {
-  this.panelListeners = new Set();
-  this.name = "menu";
-}
-MenuState.prototype = {
+class MenuScene extends Phaser.Scene {
+  constructor() {
+    super("Menu");
+    this.panelListeners = new Set();
+    this.name = "menu";
+  }
+  get activeInputs() {
+    return Pong.activeInputs;
+  }
   preload() {
     uiUtils.hideAllPanels();
-    this.game.activeInputs = {};
-  },
+  }
   create() {
-    let game = this.game;
     console.log("MenuState create");
     showPanel('menu', {
       top: 15, right: 15, bottom: 15, left: 15
     });
     let listener = uiUtils.handlePanelEvent("menu", "button", "click", () => {
       console.log("button click");
-      this.state.start("Game");
+      this.scene.launch("Game");
     });
     this.panelListeners.add(listener);
     // TODO: some UI to pick/indicate controller for each player
@@ -30,68 +32,72 @@ MenuState.prototype = {
     this.prepareInputs();
 
     // this is what the UI / input detection would do:
-    this.configureInputForPlayer("player1", "arrowKeys");
-    this.configureInputForPlayer("player2", "wasdKeys");
-  },
+    this.configureInputForPlayer("player1", "wasdKeys");
+    this.configureInputForPlayer("player2", "arrowKeys");
+  }
   prepareInputs() {
     let game = Pong.game;
-    game.activeInputs.arrowKeys = {
-      x: game.world.centerX,
-      y: game.world.centerY,
-      _left: game.input.keyboard.addKey(Phaser.Keyboard.LEFT),
-      _right: game.input.keyboard.addKey(Phaser.Keyboard.RIGHT),
-      _up: game.input.keyboard.addKey(Phaser.Keyboard.UP),
-      _down: game.input.keyboard.addKey(Phaser.Keyboard.DOWN),
+    let dims = {
+      centerX: this.cameras.main.midPoint.x,
+      centerY: this.cameras.main.midPoint.y,
+      width: this.cameras.main.width,
+      height: this.cameras.main.height,
+    };
+    this.activeInputs.arrowKeys = {
+      x: dims.centerX,
+      y: dims.centerY,
+      _cursors: this.input.keyboard.createCursorKeys(),
       update() {
-        if (this._left.isDown) {
+        if (this._cursors.left.isDown) {
           this.x = Math.max(this.x - 8, 0);
         }
-        if (this._right.isDown) {
-          this.x = Math.min(this.x + 8, game.world.width);
+        if (this._cursors.right.isDown) {
+          this.x = Math.min(this.x + 8, dims.width);
         }
-        if (this._up.isDown) {
+        if (this._cursors.up.isDown) {
           this.y = Math.max(this.y - 8, 0);
         }
-        if (this._down.isDown) {
-          this.y = Math.min(this.y + 8, game.world.height);
+        if (this._cursors.down.isDown) {
+          this.y = Math.min(this.y + 8, dims.height);
         }
       }
     };
 
-    // maybe we can do this directly into game.input?
+    // maybe we can do this directly into this.input?
     // might want to go to phaser3 before putting time into extending it tho'
-    game.activeInputs.wasdKeys = {
-      x: game.world.centerX,
-      y: game.world.centerY,
-      _left: game.input.keyboard.addKey(Phaser.Keyboard.A),
-      _right: game.input.keyboard.addKey(Phaser.Keyboard.D),
-      _up: game.input.keyboard.addKey(Phaser.Keyboard.W),
-      _down: game.input.keyboard.addKey(Phaser.Keyboard.S),
+    this.activeInputs.wasdKeys = {
+      x: dims.centerX,
+      y: dims.centerY,
+      _left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+      _right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+      _up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      _down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
       update() {
+        console.log("activeInputs wasdKeys update")
         if (this._left.isDown) {
           this.x = Math.max(this.x - 8, 0);
         }
         if (this._right.isDown) {
-          this.x = Math.min(this.x + 8, game.world.width);
+          this.x = Math.min(this.x + 8, dims.width);
         }
         if (this._up.isDown) {
           this.y = Math.max(this.y - 8, 0);
         }
         if (this._down.isDown) {
-          this.y = Math.min(this.y + 8, game.world.height);
+          this.y = Math.min(this.y + 8, dims.height);
         }
       }
     };
 
-    game.activeInputs.mouse = {
+    this.activeInputs.mouse = {
       get x() {
-        return game.input.x;
+        return this.input.x;
       },
       get y() {
-        return game.input.y;
+        return this.input.y;
       }
     };
-    game.activeInputs.auto = {
+    this.activeInputs.auto = {
       get x() {
         return ball.x;
       },
@@ -99,7 +105,7 @@ MenuState.prototype = {
         return ball.y;
       }
     };
-  },
+  }
   configureInputForPlayer(id, inputType) {
     let player = Pong[id];
     if (!player) {
@@ -107,7 +113,7 @@ MenuState.prototype = {
       throw new Error("No such player with id: " + id);
     }
     player.inputType = inputType;
-  },
+  }
   shutdown() {
     console.log("About shutdown, removing panel listeners");
     for (let listener of this.panelListeners) {

@@ -1,25 +1,23 @@
 "use strict";
 
-function AboutState() {
-  this.panelListeners = new Set();
-};
-AboutState.prototype = {
+class AboutScene extends Phaser.Scene {
+  constructor() {
+    super("About");
+    this.panelListeners = new Set();
+  }
   preload() {
     console.log("About preload");
     console.log("Preload all the game assets");
-    let game = Pong.game;
     for (let [name, value] of Object.entries(assetPack)) {
       if (value.src) {
-        game.load.image(name, value.src);
+        this.load.image(name, value.src);
       }
     }
-  },
+  }
   create() {
+    window.currentScene = this;
     console.log("About create");
     let game = this.game;
-    //loading screen will have a plain background
-    game.stage.backgroundColor = "#666";
-    let gameBounds = Object.assign({}, game.world.bounds);
     let panelBounds = {
       top: 15,
       right: 15,
@@ -29,10 +27,10 @@ AboutState.prototype = {
     uiUtils.showPanel("about", panelBounds);
     let listener = uiUtils.handlePanelEvent("about", "button", "click", () => {
       console.log("button click");
-      this.state.start("Menu");
+      this.scene.launch("Menu");
     });
     this.panelListeners.add(listener);
-  },
+  }
   shutdown() {
     console.log("About shutdown, removing panel listeners");
     for (let listener of this.panelListeners) {
